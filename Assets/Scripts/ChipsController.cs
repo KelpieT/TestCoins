@@ -27,7 +27,7 @@ namespace ChipsController
         private void Start()
         {
             LoadAllResources();
-            GenerateStack(1);
+            GenerateStack(3);
         }
         private void LoadAllResources()
         {
@@ -41,18 +41,22 @@ namespace ChipsController
 
             List<Vector3> edgeLoop = GetEdgeLoopChipVertex();
             List<Vector3> totalVertex = new List<Vector3>();
+            List<int> tris = new List<int>();
             for (int i = 0; i < countChips + 1; i++)
             {
                 foreach (Vector3 v in edgeLoop)
                 {
                     totalVertex.Add(v + Vector3.forward * 0.3f * i);
                 }
-
+                if (i > 0)
+                {
+                    tris.AddRange(CreateTrianglesInEdge(0, (edgeLoop.Count) * (i - 1), edgeLoop.Count));
+                }
             }
 
             stackChips.SetVertices(totalVertex);
             DebugMesh(stackChips);
-            SetTrisToEdge(ref stackChips);
+            stackChips.triangles = tris.ToArray();
             CreateObject(stackChips);
 
         }
@@ -143,40 +147,30 @@ namespace ChipsController
             currentList = new List<Vector3>();
             currentList = tempList.OrderBy(v => Vector3.SignedAngle(v, Vector3.up, Vector3.forward)).ToList();
         }
-        private void SetTrisToEdge(ref Mesh mesh)
-        {
-            // ______________________________________________
-            //TEST!!!
-            // ______________________________________________
 
-
-
-            mesh.triangles = CreateTrianglesInEdge(0, 0, mesh.vertexCount).ToArray();
-
-        }
-        private List<int> CreateTrianglesInEdge(int firstVert, int FirstTotalVert, int LastTotalVert)
+        private List<int> CreateTrianglesInEdge(int firstVert, int startIndex, int countVertexEdge)
         {
             List<int> currentTwotriangles = new List<int>();
-            if (firstVert < LastTotalVert / 2)
+            if (firstVert < (countVertexEdge))
             {
                 int p1 = firstVert;
-                int p2 = LastTotalVert / 2 + firstVert;
-                int p3 = LastTotalVert / 2 + firstVert + 1;
+                int p2 = countVertexEdge + firstVert;
+                int p3 = countVertexEdge + firstVert + 1;
                 int p4 = firstVert + 1;
-                if (firstVert == LastTotalVert / 2 - 1)
+                if (firstVert == countVertexEdge - 1)
                 {
                     //connect edge
-                    p3 = LastTotalVert / 2;
-                    p4 = FirstTotalVert;
+                    p3 = countVertexEdge;
+                    p4 = 0;
                 }
-                currentTwotriangles.Add(p1);
-                currentTwotriangles.Add(p2);
-                currentTwotriangles.Add(p3);
-                currentTwotriangles.Add(p4);
-                currentTwotriangles.Add(p1);
-                currentTwotriangles.Add(p3);
+                currentTwotriangles.Add(p1 + startIndex);
+                currentTwotriangles.Add(p2 + startIndex);
+                currentTwotriangles.Add(p3 + startIndex);
+                currentTwotriangles.Add(p4 + startIndex);
+                currentTwotriangles.Add(p1 + startIndex);
+                currentTwotriangles.Add(p3 + startIndex);
                 firstVert += 1;
-                currentTwotriangles.AddRange(CreateTrianglesInEdge(firstVert, FirstTotalVert, LastTotalVert));
+                currentTwotriangles.AddRange(CreateTrianglesInEdge(firstVert, startIndex, countVertexEdge));
             }
             return currentTwotriangles;
         }
