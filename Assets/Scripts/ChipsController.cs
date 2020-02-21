@@ -27,7 +27,7 @@ namespace ChipsController
         private void Start()
         {
             LoadAllResources();
-            GenerateStack(2);
+            GenerateStack(1);
         }
         private void LoadAllResources()
         {
@@ -41,12 +41,13 @@ namespace ChipsController
 
             List<Vector3> edgeLoop = GetEdgeLoopChipVertex();
             List<Vector3> totalVertex = new List<Vector3>();
-            for (int i = 0; i < countChips; i++)
+            for (int i = 0; i < countChips + 1; i++)
             {
                 foreach (Vector3 v in edgeLoop)
                 {
                     totalVertex.Add(v + Vector3.forward * 0.3f * i);
                 }
+
             }
 
             stackChips.SetVertices(totalVertex);
@@ -110,37 +111,37 @@ namespace ChipsController
                 Debug.Log(v.ToString());
             }
         }
-        private List<Vector3> DeleteDuplicateVerteces(List<Vector3> curList)
+        private List<Vector3> DeleteDuplicateVerteces(List<Vector3> currentList)
         {
-            List<Vector3> vList = new List<Vector3>();
-            for (int i = 0; i < curList.Count; i++)
+            List<Vector3> tempList = new List<Vector3>();
+            for (int i = 0; i < currentList.Count; i++)
             {
-                Vector3 curV = curList[i];
-                bool b = false;
-                foreach (Vector3 v in vList)
+                Vector3 currentVector = currentList[i];
+                bool foundInList = false;
+                foreach (Vector3 v in tempList)
                 {
-                    if (v == curV)
+                    if (v == currentVector)
                     {
-                        b = true;
+                        foundInList = true;
                         break;
                     }
                 }
-                if (!b)
+                if (!foundInList)
                 {
-                    vList.Add(curV);
+                    tempList.Add(currentVector);
                 }
             }
-            return vList;
+            return tempList;
         }
-        private void SortVerteces(ref List<Vector3> curList)
+        private void SortVerteces(ref List<Vector3> currentList)
         {
-            List<Vector3> v3 = new List<Vector3>();
-            foreach (Vector3 v in curList)
+            List<Vector3> tempList = new List<Vector3>();
+            foreach (Vector3 v in currentList)
             {
-                v3.Add(v);
+                tempList.Add(v);
             }
-            curList = new List<Vector3>();
-            curList = v3.OrderBy(v => Vector3.SignedAngle(v, Vector3.up, Vector3.forward)).ToList();
+            currentList = new List<Vector3>();
+            currentList = tempList.OrderBy(v => Vector3.SignedAngle(v, Vector3.up, Vector3.forward)).ToList();
         }
         private void SetTrisToEdge(ref Mesh mesh)
         {
@@ -148,29 +149,36 @@ namespace ChipsController
             //TEST!!!
             // ______________________________________________
 
-            int[] totalTris = new int[mesh.vertices.Length * 3];
 
-            for (int i = 0; i < totalTris.Length / 6 - 1; i++)
+
+            mesh.triangles = CreateTrianglesInEdge(0, 0, mesh.vertexCount).ToArray();
+
+        }
+        private List<int> CreateTrianglesInEdge(int firstVert, int FirstTotalVert, int LastTotalVert)
+        {
+            List<int> currentTwotriangles = new List<int>();
+            if (firstVert < LastTotalVert / 2)
             {
-                totalTris[i * 6] = i;
-                totalTris[i * 6 + 1] = mesh.vertices.Length / 2 + i;
-                totalTris[i * 6 + 2] = mesh.vertices.Length / 2 + 1 + i;
-                totalTris[i * 6 + 3] = i + 1;
-                totalTris[i * 6 + 4] = i;
-                totalTris[i * 6 + 5] = mesh.vertices.Length / 2 + 1 + i;
-                if (i == totalTris.Length / 6 - 2)
+                int p1 = firstVert;
+                int p2 = LastTotalVert / 2 + firstVert;
+                int p3 = LastTotalVert / 2 + firstVert + 1;
+                int p4 = firstVert + 1;
+                if (firstVert == LastTotalVert / 2 - 1)
                 {
-                    totalTris[i * 6 + 6] = i + 1;
-                    totalTris[i * 6 + 7] = mesh.vertices.Length / 2 + 1 + i;
-                    totalTris[i * 6 + 8] = mesh.vertices.Length / 2;
-                    totalTris[i * 6 + 9] = 0;
-                    totalTris[i * 6 + 10] = i + 1;
-                    totalTris[i * 6 + 11] = mesh.vertices.Length / 2;
+                    //connect edge
+                    p3 = LastTotalVert / 2;
+                    p4 = FirstTotalVert;
                 }
+                currentTwotriangles.Add(p1);
+                currentTwotriangles.Add(p2);
+                currentTwotriangles.Add(p3);
+                currentTwotriangles.Add(p4);
+                currentTwotriangles.Add(p1);
+                currentTwotriangles.Add(p3);
+                firstVert += 1;
+                currentTwotriangles.AddRange(CreateTrianglesInEdge(firstVert, FirstTotalVert, LastTotalVert));
             }
-
-            mesh.triangles = totalTris;
-
+            return currentTwotriangles;
         }
 
 
