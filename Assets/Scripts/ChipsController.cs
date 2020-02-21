@@ -27,7 +27,7 @@ namespace ChipsController
         private void Start()
         {
             LoadAllResources();
-            GenerateStack(1);
+            GenerateStack(2);
         }
         private void LoadAllResources()
         {
@@ -38,33 +38,51 @@ namespace ChipsController
         {
             stackChips = new Mesh();
             CountChipsInStack = countChips;
-            stackChips.SetVertices(GetEdgeLoopChipVertex());
-            SortVerteces(ref stackChips);
+
+            List<Vector3> edgeLoop = GetEdgeLoopChipVertex();
+            List<Vector3> totalVertex = new List<Vector3>();
+            for (int i = 0; i < countChips; i++)
+            {
+                foreach (Vector3 v in edgeLoop)
+                {
+                    totalVertex.Add(v + Vector3.forward * 0.3f * i);
+                }
+            }
+
+            stackChips.SetVertices(totalVertex);
             DebugMesh(stackChips);
+            SetTrisToEdge(ref stackChips);
             CreateObject(stackChips);
-           
+
         }
+
         private List<Vector3> GetEdgeLoopChipVertex()
         {
             List<Vector3> v3 = new List<Vector3>();
+            List<Vector3> temp = new List<Vector3>();
+            chip.GetVertices(temp);
             float zBig = float.MinValue;
             float zOffset = 0.01f;
-            foreach (Vector3 v in chip.vertices)
+            foreach (Vector3 v in temp)
             {
                 if (zBig < v.z) { zBig = v.z; }
             }
-            foreach (Vector3 v in chip.vertices)
+            for (int i = 0; i < chip.vertices.Length; i++)
             {
-                if (v.z > zBig - zOffset && v.z < zBig+zOffset)
+
+                Vector3 v = chip.vertices[i];
+                if (v.z > zBig - zOffset && v.z < zBig + zOffset)
                 {
+
                     v3.Add(v);
                 }
             }
+            v3 = DeleteDuplicateVerteces(v3);
+            SortVerteces(ref v3);
             return v3;
 
         }
-        
-        void CreateObject(Mesh stackMesh)
+        private void CreateObject(Mesh stackMesh)
         {
             GameObject stack = new GameObject(nameMesh);
             MeshFilter meshFilter = stack.AddComponent<MeshFilter>();
@@ -92,19 +110,71 @@ namespace ChipsController
                 Debug.Log(v.ToString());
             }
         }
-        void SortVerteces(ref Mesh mesh)
+        private List<Vector3> DeleteDuplicateVerteces(List<Vector3> curList)
+        {
+            List<Vector3> vList = new List<Vector3>();
+            for (int i = 0; i < curList.Count; i++)
+            {
+                Vector3 curV = curList[i];
+                bool b = false;
+                foreach (Vector3 v in vList)
+                {
+                    if (v == curV)
+                    {
+                        b = true;
+                        break;
+                    }
+                }
+                if (!b)
+                {
+                    vList.Add(curV);
+                }
+            }
+            return vList;
+        }
+        private void SortVerteces(ref List<Vector3> curList)
         {
             List<Vector3> v3 = new List<Vector3>();
-            List<Vector3> vv3 = new List<Vector3>();
-            foreach (Vector3 v in mesh.vertices)
+            foreach (Vector3 v in curList)
             {
                 v3.Add(v);
             }
-            vv3 = v3.OrderBy(v => Vector3.SignedAngle(v, Vector3.up, Vector3.forward)).ToList();
-            mesh.SetVertices(vv3);
+            curList = new List<Vector3>();
+            curList = v3.OrderBy(v => Vector3.SignedAngle(v, Vector3.up, Vector3.forward)).ToList();
+        }
+        private void SetTrisToEdge(ref Mesh mesh)
+        {
+            // ______________________________________________
+            //TEST!!!
+            // ______________________________________________
+
+            int[] totalTris = new int[mesh.vertices.Length * 3];
+
+            for (int i = 0; i < totalTris.Length / 6 - 1; i++)
+            {
+                totalTris[i * 6] = i;
+                totalTris[i * 6 + 1] = mesh.vertices.Length / 2 + i;
+                totalTris[i * 6 + 2] = mesh.vertices.Length / 2 + 1 + i;
+                totalTris[i * 6 + 3] = i + 1;
+                totalTris[i * 6 + 4] = i;
+                totalTris[i * 6 + 5] = mesh.vertices.Length / 2 + 1 + i;
+                if (i == totalTris.Length / 6 - 2)
+                {
+                    totalTris[i * 6 + 6] = i + 1;
+                    totalTris[i * 6 + 7] = mesh.vertices.Length / 2 + 1 + i;
+                    totalTris[i * 6 + 8] = mesh.vertices.Length / 2;
+                    totalTris[i * 6 + 9] = 0;
+                    totalTris[i * 6 + 10] = i + 1;
+                    totalTris[i * 6 + 11] = mesh.vertices.Length / 2;
+                }
+            }
+
+            mesh.triangles = totalTris;
 
         }
-       
+
+
+
     }
 
 }
