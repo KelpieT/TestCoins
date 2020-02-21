@@ -52,6 +52,16 @@ namespace ChipsController
                 {
                     tris.AddRange(CreateTrianglesInEdge(0, (edgeLoop.Count) * (i - 1), edgeLoop.Count));
                 }
+                if (i == countChips)
+                {
+                    List<int> notCon = new List<int>();
+                    for (int j = 0; j < edgeLoop.Count; j++)
+                    {
+                        notCon.Add(j + edgeLoop.Count * i);
+                    }
+                    notCon.Add(notCon[0]);//circle surface
+                    tris.AddRange(CreateTrianglesInFace(notCon));
+                }
             }
 
             stackChips.SetVertices(totalVertex);
@@ -174,7 +184,25 @@ namespace ChipsController
             }
             return currentTwotriangles;
         }
+        private List<int> CreateTrianglesInFace(List<int> notCon)
+        {
+            List<int> currentTriangle = new List<int>();
+            List<int> temp = notCon;
+            for (int i = 0; i < notCon.Count - 2; i ++)
+            {
 
+                currentTriangle.Add(notCon[i + 1]);
+                currentTriangle.Add(notCon[i]);
+                currentTriangle.Add(notCon[i + 2]);
+                temp.Remove(notCon[i + 1]);
+
+            }
+            if (notCon.Count > 3)
+            {
+                currentTriangle.AddRange(CreateTrianglesInFace(temp));
+            }
+            return currentTriangle;
+        }
 
 
     }
