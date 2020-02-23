@@ -44,6 +44,11 @@ namespace ChipsController
 
         //---------------------------------------------
 
+        //Temp variables
+        //---------------------------------------------
+        float sortYuv = 0.15f;
+        //---------------------------------------------
+
 
         private void Start()
         {
@@ -75,6 +80,7 @@ namespace ChipsController
                 }
                 if (i == countChips)
                 {
+                    //CreateFaceTris
                     List<int> notCon = new List<int>();
                     for (int j = 0; j < edgeLoop.Count; j++)
                     {
@@ -86,11 +92,10 @@ namespace ChipsController
             }
 
             stackChips.SetVertices(GetPositionFromMyVertices(totalVertex));
-            //stackChips.SetUVs(0,uvww);
-            //DebugMesh(chip);
+            // DebugMesh(stackChips);
+            debugUv();
             stackChips.triangles = tris.ToArray();
             CreateObject(stackChips);
-            // GetUVForFace();
 
         }
 
@@ -269,15 +274,33 @@ namespace ChipsController
         }
 
 
-        // void GetUVForFace()
-        // {
-        //     List<Vector2> nnnn = new List<Vector2>();
-        //     chip.GetUVs(0, nnnn);
-        //     foreach (Vector2 v in nnnn)
-        //     {
-        //         Debug.Log(v);
-        //     }
-        // }
-    }
+        void debugUv()
+        {
 
+            List<Vector2> nnnn = new List<Vector2>();
+            chip.GetUVs(0, nnnn);
+            foreach (Vector2 v in nnnn)
+            {
+                if (v.y < sortYuv)
+                {
+                    Debug.Log(v.ToString() + " bottomUV");
+                }
+                else
+                {
+                }
+            }
+            for (int i = 0; i < nnnn.Count - 1; i++)
+            {
+                if (nnnn[i].y < sortYuv && nnnn[i + 1].y < sortYuv)
+                {
+                    Vector3 s = nnnn[i];
+                    Vector3 e = nnnn[i + 1];
+                    Debug.DrawLine(s, e, new Color(1, 1, 1, 1), 60f);
+                }
+            }
+
+
+        }
+    }
 }
+
