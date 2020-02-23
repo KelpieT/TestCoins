@@ -84,7 +84,7 @@ namespace ChipsController
                     tris.AddRange(CreateTrianglesInFace(notCon));
                 }
             }
-           
+
             stackChips.SetVertices(GetPositionFromMyVertices(totalVertex));
             //stackChips.SetUVs(0,uvww);
             //DebugMesh(chip);
@@ -237,6 +237,37 @@ namespace ChipsController
             }
             return position;
         }
+        private List<Vector2> GetUvFromMyVertices(List<MyVertex> listMyVertex)
+        {
+            List<Vector2> uv = new List<Vector2>();
+            foreach (MyVertex mv in listMyVertex)
+            {
+                uv.Add(mv.uv);
+            }
+            return uv;
+        }
+        private List<Vector3> GetNormalFromMyVertices(List<MyVertex> listMyVertex)
+        {
+            List<Vector3> normal = new List<Vector3>();
+            foreach (MyVertex mv in listMyVertex)
+            {
+                normal.Add(mv.normal);
+            }
+            return normal;
+        }
+        private List<int> GetNumberInTris(List<MyVertex> listMyVertex)
+        {
+            List<int> numberInTris = new List<int>();
+            foreach (MyVertex mv in listMyVertex)
+            {
+                if (mv.numberInTriangles >= 0)
+                {
+                    numberInTris.Add(mv.numberInTriangles);
+                }
+            }
+            return numberInTris;
+        }
+
 
         // void GetUVForFace()
         // {
