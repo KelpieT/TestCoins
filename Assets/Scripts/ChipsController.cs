@@ -6,6 +6,20 @@ using System.Linq;
 namespace ChipsController
 {
 
+    public struct MyVertex
+    {
+        public Vector3 position;
+        public Vector2 uv;
+        public Vector3 normal;
+        public int numberInTriangles;
+        public MyVertex(Vector3 position)
+        {
+            this.position = position;
+            uv = Vector2.zero;
+            normal = Vector3.forward;
+            numberInTriangles = -1;
+        }
+    }
     public class ChipsController : MonoBehaviour
     {
         //Resourses
@@ -24,10 +38,17 @@ namespace ChipsController
         private string nameMesh = "StackMesh";
         //---------------------------------------------
 
+        //ComponentsMesh
+        //---------------------------------------------
+        private List<MyVertex> MyVertices = new List<MyVertex>();
+
+        //---------------------------------------------
+
+
         private void Start()
         {
             LoadAllResources();
-            GenerateStack(3);
+            GenerateStack(0);
         }
         private void LoadAllResources()
         {
@@ -40,13 +61,13 @@ namespace ChipsController
             CountChipsInStack = countChips;
 
             List<Vector3> edgeLoop = GetEdgeLoopChipVertex();
-            List<Vector3> totalVertex = new List<Vector3>();
+            List<MyVertex> totalVertex = new List<MyVertex>();
             List<int> tris = new List<int>();
             for (int i = 0; i < countChips + 1; i++)
             {
                 foreach (Vector3 v in edgeLoop)
                 {
-                    totalVertex.Add(v + Vector3.forward * 0.3f * i);
+                    totalVertex.Add(new MyVertex(v + Vector3.forward * 0.3f * i));
                 }
                 if (i > 0)
                 {
@@ -63,11 +84,17 @@ namespace ChipsController
                     tris.AddRange(CreateTrianglesInFace(notCon));
                 }
             }
-
-            stackChips.SetVertices(totalVertex);
-            DebugMesh(stackChips);
+            List<Vector3> totalVertexPosition = new List<Vector3>();
+            foreach (MyVertex mv in totalVertex)
+            {
+                totalVertexPosition.Add(mv.position);
+            }
+            stackChips.SetVertices(totalVertexPosition);
+            //stackChips.SetUVs(0,uvww);
+            //DebugMesh(chip);
             stackChips.triangles = tris.ToArray();
             CreateObject(stackChips);
+           // GetUVForFace();
 
         }
 
@@ -124,6 +151,7 @@ namespace ChipsController
             {
                 Debug.Log(v.ToString());
             }
+
         }
         private List<Vector3> DeleteDuplicateVerteces(List<Vector3> currentList)
         {
@@ -188,7 +216,7 @@ namespace ChipsController
         {
             List<int> currentTriangle = new List<int>();
             List<int> temp = notCon;
-            for (int i = 0; i < notCon.Count - 2; i ++)
+            for (int i = 0; i < notCon.Count - 2; i++)
             {
 
                 currentTriangle.Add(notCon[i + 1]);
@@ -204,7 +232,15 @@ namespace ChipsController
             return currentTriangle;
         }
 
-
+        // void GetUVForFace()
+        // {
+        //     List<Vector2> nnnn = new List<Vector2>();
+        //     chip.GetUVs(0, nnnn);
+        //     foreach (Vector2 v in nnnn)
+        //     {
+        //         Debug.Log(v);
+        //     }
+        // }
     }
 
 }
