@@ -84,17 +84,13 @@ namespace ChipsController
                     tris.AddRange(CreateTrianglesInFace(notCon));
                 }
             }
-            List<Vector3> totalVertexPosition = new List<Vector3>();
-            foreach (MyVertex mv in totalVertex)
-            {
-                totalVertexPosition.Add(mv.position);
-            }
-            stackChips.SetVertices(totalVertexPosition);
+           
+            stackChips.SetVertices(GetPositionFromMyVertices(totalVertex));
             //stackChips.SetUVs(0,uvww);
             //DebugMesh(chip);
             stackChips.triangles = tris.ToArray();
             CreateObject(stackChips);
-           // GetUVForFace();
+            // GetUVForFace();
 
         }
 
@@ -230,6 +226,16 @@ namespace ChipsController
                 currentTriangle.AddRange(CreateTrianglesInFace(temp));
             }
             return currentTriangle;
+        }
+
+        private List<Vector3> GetPositionFromMyVertices(List<MyVertex> listMyVertex)
+        {
+            List<Vector3> position = new List<Vector3>();
+            foreach (MyVertex mv in listMyVertex)
+            {
+                position.Add(mv.position);
+            }
+            return position;
         }
 
         // void GetUVForFace()
