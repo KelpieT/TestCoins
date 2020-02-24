@@ -96,15 +96,15 @@ namespace ChipsController
         private void Start()
         {
             LoadAllResources();
-            WorkWithMyVertex();
-            newgenerateStack(1);
+            CreateMyVertices();
+            CreateAllTris();
+            GenerateStack(1);
         }
         private void LoadAllResources()
         {
             chip = Resources.Load<Mesh>(pathToMeshChip);
             material = Resources.Load<Material>(pathToMeshMaterial);
         }
-
 
         private void CreateObject(Mesh stackMesh)
         {
@@ -164,7 +164,7 @@ namespace ChipsController
             return normal;
         }
 
-        private void WorkWithMyVertex()
+        private void CreateMyVertices()
         {
             List<Vector3> chipPos = new List<Vector3>();
             chip.GetVertices(chipPos);
@@ -183,12 +183,15 @@ namespace ChipsController
                 MyVertices.Add(myVertex);
             }
 
-            CreateAllTris();
-
-            sortMyVerteces();
         }
 
         private void CreateAllTris()
+        {
+            AssignAllTrisFromMesh();
+            CreateTrisForParts();
+        }
+
+        private void AssignAllTrisFromMesh()
         {
             int[] tris = chip.triangles;
             for (int i = 0; i < tris.Length / 3; i++)
@@ -202,7 +205,7 @@ namespace ChipsController
             }
         }
 
-        private void sortMyVerteces()
+        private void CreateTrisForParts()
         {
 
             float zOffset = 0.1f;
@@ -226,8 +229,8 @@ namespace ChipsController
                     numbersInTrisEdge.Add(i);
                 }
             }
-            trianglesFace = replacedTris(tempTrisFace, numbersInTrisFace);
-            trianglesEdge = replacedTris(tempTrisEdge, numbersInTrisEdge);
+            trianglesFace = ReplacedTris(tempTrisFace, numbersInTrisFace);
+            trianglesEdge = ReplacedTris(tempTrisEdge, numbersInTrisEdge);
 
         }
         List<int[]> SearchTris(int vertexNumber)
@@ -251,7 +254,7 @@ namespace ChipsController
             }
             return temp;
         }
-        int[] replacedTris(List<int[]> tempTris, List<int> numbers)
+        int[] ReplacedTris(List<int[]> tempTris, List<int> numbers)
         {
             int[] totalTris = new int[tempTris.Count * 3];
             for (int i = 0; i < tempTris.Count; i++)
@@ -274,9 +277,7 @@ namespace ChipsController
             return totalTris;
         }
 
-
-
-        void newgenerateStack(int countChips)
+        void GenerateStack(int countChips)
         {
             List<int> trianglesEdge = new List<int>();
             List<int> trianglesFace = new List<int>();
