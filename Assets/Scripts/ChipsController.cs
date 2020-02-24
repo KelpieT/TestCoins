@@ -96,7 +96,7 @@ namespace ChipsController
         public Color[] colors;
         //---------------------------------------------
         List<int> trianglesEdge1 = new List<int>();
-        List<int> trianglesFace1 = new List<int>();
+        int[] trianglesFace1;
 
         private void Start()
         {
@@ -392,7 +392,7 @@ namespace ChipsController
                 {
                     if (fff < triangles[i][j])
                     {
-                      //  triangles[i][j]--;
+                        //  triangles[i][j]--;
                     }
                 }
             }
@@ -401,17 +401,20 @@ namespace ChipsController
         {
 
             float zOffset = 0.1f;
-
+            List<int[]> tempTris = new List<int[]>();
+            List<int> numbers = new List<int>();
             for (int i = 0; i < MyVertices.Count; i++)
             {
 
                 if (MyVertices[i].normal.z > zOffset)
                 {
                     MyVerticesFace.Add(MyVertices[i]);
+                    tempTris.AddRange(SearchTris(i));
+                    numbers.Add(i);
                 }
                 else
                 {
-                    DeleteVertexFromTris(i);
+                    //DeleteVertexFromTris(i);
 
                 }
                 // else if (MyVertices[i].normal.z > -zOffset)
@@ -422,15 +425,60 @@ namespace ChipsController
 
 
             }
-            
+            trianglesFace1 = replacedTris(tempTris,numbers);
 
         }
-        int []  trisFromTris()
+        List<int[]> SearchTris(int vertexNumber)
+        {
+            List<int[]> temp = new List<int[]>();
+            foreach (int[] tr in triangles)
+            {
+                bool isFound = false;
+                foreach (int i in tr)
+                {
+                    if (i == vertexNumber)
+                    {
+                        isFound = true;
+                        break;
+                    }
+                }
+                if (isFound)
+                {
+                    temp.Add(tr);
+                }
+            }
+            return temp;
+        }
+        int[] replacedTris(List<int[]> tempTris, List<int> numbers)
+        {
+            int[] totalTris = new int[tempTris.Count * 3];
+            for (int i = 0; i < tempTris.Count; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    totalTris[i * 3 + j] = tempTris[i][j];
+                }
+            }
+            for (int i = 0; i < numbers.Count; i++)
+            {
+                for (int j = 0; j < totalTris.Length; j++)
+                {
+                    if (numbers[i] == totalTris[j])
+                    {
+                        totalTris[j] = i;
+                    }
+                }
+            }
+            return totalTris;
+        }
+
+
+        int[] trisFromTris()
         {
             List<int> trisss = new List<int>();
-            foreach(int[] tr  in triangles)
+            foreach (int[] tr in triangles)
             {
-                foreach(int i in tr)
+                foreach (int i in tr)
                 {
                     trisss.Add(i);
                 }
@@ -477,7 +525,7 @@ namespace ChipsController
                 List<int> tris = new List<int>();
                 tris.AddRange(myChip.trianglesEdge);
                 // tris.AddRange(myChip.trianglesFace);
-                stackChips.triangles = trisFromTris(); //tris.ToArray();
+                stackChips.triangles = trianglesFace1;//trisFromTris(); //tris.ToArray();
 
                 List<Vector2> uv = new List<Vector2>();
                 // uv.AddRange(GetUvFromMyVertices(myChip.bottom));
