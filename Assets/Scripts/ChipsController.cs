@@ -11,13 +11,11 @@ namespace ChipsController
         public Vector3 position;
         public Vector2 uv;
         public Vector3 normal;
-        public int numberInTriangles;
         public MyVertex(Vector3 position)
         {
             this.position = position;
             uv = Vector2.zero;
             normal = Vector3.forward;
-            numberInTriangles = -1;
         }
     }
     public class ChipsController : MonoBehaviour
@@ -41,6 +39,11 @@ namespace ChipsController
         //ComponentsMesh
         //---------------------------------------------
         private List<MyVertex> MyVertices = new List<MyVertex>();
+        private List<MyVertex> MyVerticesTopFace = new List<MyVertex>();
+        private List<MyVertex> MyVerticesTopEdge = new List<MyVertex>();
+        private List<MyVertex> MyVerticesBotomEdge = new List<MyVertex>();
+
+
 
         //---------------------------------------------
 
@@ -65,66 +68,67 @@ namespace ChipsController
             stackChips = new Mesh();
             CountChipsInStack = countChips;
 
-            List<Vector3> edgeLoop = GetEdgeLoopChipVertex();
+            // List<Vector3> edgeLoop = GetEdgeLoopChipVertex();
             List<MyVertex> totalVertex = new List<MyVertex>();
             List<int> tris = new List<int>();
             for (int i = 0; i < countChips + 1; i++)
             {
-                foreach (Vector3 v in edgeLoop)
-                {
-                    totalVertex.Add(new MyVertex(v + Vector3.forward * 0.3f * i));
-                }
-                if (i > 0)
-                {
-                    tris.AddRange(CreateTrianglesInEdge(0, (edgeLoop.Count) * (i - 1), edgeLoop.Count));
-                }
-                if (i == countChips)
-                {
-                    //CreateFaceTris
-                    List<int> notCon = new List<int>();
-                    for (int j = 0; j < edgeLoop.Count; j++)
-                    {
-                        notCon.Add(j + edgeLoop.Count * i);
-                    }
-                    notCon.Add(notCon[0]);//circle surface
-                    tris.AddRange(CreateTrianglesInFace(notCon));
-                }
+                // foreach (Vector3 v in edgeLoop)
+                // {
+                //     totalVertex.Add(new MyVertex(v + Vector3.forward * 0.3f * i));
+                // }
+                // if (i > 0)
+                // {
+                //     tris.AddRange(CreateTrianglesInEdge(0, (edgeLoop.Count) * (i - 1), edgeLoop.Count));
+                // }
+                // if (i == countChips)
+                // {
+                //     //CreateFaceTris
+                //     List<int> notCon = new List<int>();
+                //     for (int j = 0; j < edgeLoop.Count; j++)
+                //     {
+                //         notCon.Add(j + edgeLoop.Count * i);
+                //     }
+                //     notCon.Add(notCon[0]);//circle surface
+                //     tris.AddRange(CreateTrianglesInFace(notCon));
+                // }
             }
 
             stackChips.SetVertices(GetPositionFromMyVertices(totalVertex));
             // DebugMesh(stackChips);
-            debugUv();
+            // debugUv();
+            WorkWithMyVertex();
             stackChips.triangles = tris.ToArray();
             CreateObject(stackChips);
 
         }
 
-        private List<Vector3> GetEdgeLoopChipVertex()
-        {
-            List<Vector3> v3 = new List<Vector3>();
-            List<Vector3> temp = new List<Vector3>();
-            chip.GetVertices(temp);
-            float zBig = float.MinValue;
-            float zOffset = 0.01f;
-            foreach (Vector3 v in temp)
-            {
-                if (zBig < v.z) { zBig = v.z; }
-            }
-            for (int i = 0; i < chip.vertices.Length; i++)
-            {
+        // private List<Vector3> GetEdgeLoopChipVertex()
+        // {
+        //     List<Vector3> v3 = new List<Vector3>();
+        //     List<Vector3> temp = new List<Vector3>();
+        //     chip.GetVertices(temp);
+        //     float zBig = float.MinValue;
+        //     float zOffset = 0.01f;
+        //     foreach (Vector3 v in temp)
+        //     {
+        //         if (zBig < v.z) { zBig = v.z; }
+        //     }
+        //     for (int i = 0; i < chip.vertices.Length; i++)
+        //     {
 
-                Vector3 v = chip.vertices[i];
-                if (v.z > zBig - zOffset && v.z < zBig + zOffset)
-                {
+        //         Vector3 v = chip.vertices[i];
+        //         if (v.z > zBig - zOffset && v.z < zBig + zOffset)
+        //         {
 
-                    v3.Add(v);
-                }
-            }
-            v3 = DeleteDuplicateVerteces(v3);
-            SortVerteces(ref v3);
-            return v3;
+        //             v3.Add(v);
+        //         }
+        //     }
+        //     v3 = DeleteDuplicateVerteces(v3);
+        //     //SortVerteces(ref v3);
+        //     return v3;
 
-        }
+        // }
         private void CreateObject(Mesh stackMesh)
         {
             GameObject stack = new GameObject(nameMesh);
@@ -176,15 +180,15 @@ namespace ChipsController
             }
             return tempList;
         }
-        private void SortVerteces(ref List<Vector3> currentList)
+        private void SortVerteces(ref List<MyVertex> currentList)
         {
-            List<Vector3> tempList = new List<Vector3>();
-            foreach (Vector3 v in currentList)
+            List<MyVertex> tempList = new List<MyVertex>();
+            foreach (MyVertex mv in currentList)
             {
-                tempList.Add(v);
+                tempList.Add(mv);
             }
-            currentList = new List<Vector3>();
-            currentList = tempList.OrderBy(v => Vector3.SignedAngle(v, Vector3.up, Vector3.forward)).ToList();
+            currentList = new List<MyVertex>();
+            currentList = tempList.OrderBy(v => Vector3.SignedAngle(v.position, Vector3.up, Vector3.forward)).ToList();
         }
 
         private List<int> CreateTrianglesInEdge(int firstVert, int startIndex, int countVertexEdge)
@@ -260,20 +264,60 @@ namespace ChipsController
             }
             return normal;
         }
-        private List<int> GetNumberInTris(List<MyVertex> listMyVertex)
+        
+        private void WorkWithMyVertex()
         {
-            List<int> numberInTris = new List<int>();
-            foreach (MyVertex mv in listMyVertex)
+            List<Vector3> chipPos = new List<Vector3>();
+            chip.GetVertices(chipPos);
+
+            List<Vector2> chipUV = new List<Vector2>();
+            chip.GetUVs(0, chipUV);
+
+            List<Vector3> chipNormals = new List<Vector3>();
+            chip.GetNormals(chipNormals);
+
+            for (int i = 0; i < chipPos.Count; i++)
             {
-                if (mv.numberInTriangles >= 0)
+                MyVertex myVertex = new MyVertex(chipPos[i]);
+                myVertex.uv = chipUV[i];
+                myVertex.normal = chipNormals[i];
+                MyVertices.Add(myVertex);
+            }
+
+           sortMyVerteces();
+        }
+        private void sortMyVerteces()
+        {
+            float zBig = float.MinValue;
+            float zSmall = float.MaxValue;
+            float zOffset = 0.01f;
+            foreach (MyVertex mv in MyVertices)
+            {
+                if (zBig < mv.position.z) { zBig = mv.position.z; }
+                if (zSmall > mv.position.z) { zSmall = mv.position.z; }
+            }
+            foreach (MyVertex mv in MyVertices)
+            {
+                if (mv.position.z > zBig - zOffset && mv.position.z < zBig + zOffset)
                 {
-                    numberInTris.Add(mv.numberInTriangles);
+                    if (mv.uv.y > sortYuv)
+                    {
+                        MyVerticesTopFace.Add(mv);
+                    }
+                    else
+                    {
+                        MyVerticesTopEdge.Add(mv);
+                    }
+                }
+                else
+                {
+                    if (mv.uv.y < sortYuv)
+                    {
+                        MyVerticesBotomEdge.Add(mv);
+                    }
                 }
             }
-            return numberInTris;
         }
-
-
         void debugUv()
         {
 
@@ -301,6 +345,7 @@ namespace ChipsController
 
 
         }
+
     }
 }
 
