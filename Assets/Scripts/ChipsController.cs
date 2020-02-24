@@ -47,7 +47,7 @@ namespace ChipsController
 
         }
 
-        public MyChip( List<MyVertex> top, List<MyVertex> topFace, float rotation, Color color, List<int> trianglesEdge, List<int> trianglesFace)
+        public MyChip(List<MyVertex> top, List<MyVertex> topFace, float rotation, Color color, List<int> trianglesEdge, List<int> trianglesFace)
         {
             // this.bottom = bottom;
             this.face = topFace;
@@ -85,7 +85,7 @@ namespace ChipsController
         private List<MyVertex> MyVerticesFace = new List<MyVertex>();
         private List<MyVertex> MyVerticesEdge = new List<MyVertex>();
 
-
+        private List<int[]> triangles = new List<int[]>();
 
         //---------------------------------------------
 
@@ -203,7 +203,7 @@ namespace ChipsController
             {
                 Debug.Log(v.ToString());
             }
-            
+
         }
         private List<MyVertex> DeleteDuplicateVerteces(List<MyVertex> currentList)
         {
@@ -331,34 +331,111 @@ namespace ChipsController
                 MyVertices.Add(myVertex);
             }
 
+            CreateAllTris();
+
             sortMyVerteces();
+        }
+
+        private void CreateAllTris()
+        {
+            int[] tris = chip.triangles;
+            for (int i = 0; i < tris.Length / 3; i++)
+            {
+                int[] triangle = new int[3];
+                for (int j = 0; j < 3; j++)
+                {
+                    triangle[j] = tris[i * 3 + j];
+                }
+                triangles.Add(triangle);
+            }
+        }
+        private void DeleteVertexFromTris(int index)
+        {
+            List<int> toRemove = new List<int>();
+            List<int[]> removesListv = new List<int[]>();
+            for (int i = 0; i < triangles.Count; i++)
+            {
+                bool isFound = false;
+                for (int j = 0; j < triangles[i].Length; j++)
+                {
+                    if (index == triangles[i][j])
+                    {
+                        isFound = true;
+                        break;
+                    }
+                }
+                if (isFound)
+                {
+                    toRemove.Add(i);
+                }
+            }
+            int temp = 0;
+            foreach (int i in toRemove)
+            {
+                removesListv.Add(triangles[i - temp]);
+                triangles.RemoveAt(i - temp);
+                temp++;
+            }
+            foreach (int[] tr in removesListv)
+            {
+                foreach (int ind in tr)
+                {
+                    RecalculateAllTris(ind);
+                }
+            }
+        }
+        void RecalculateAllTris(int fff)
+        {
+            for (int i = 0; i < triangles.Count; i++)
+            {
+                for (int j = 0; j < triangles[i].Length; j++)
+                {
+                    if (fff < triangles[i][j])
+                    {
+                      //  triangles[i][j]--;
+                    }
+                }
+            }
         }
         private void sortMyVerteces()
         {
-           
-            float zOffset = 0.01f;
-            
-            for (int i = 0; i < MyVertices.Count;i++)
-            {
-                
-                    if (MyVertices[i].normal.z > zOffset)
-                    {
-                        MyVerticesFace.Add(MyVertices[i]);
-                    }
-                    else if(MyVertices[i].normal.z > - zOffset)
-                    {
-                        MyVerticesEdge.Add(MyVertices[i]);
-                    }
-               
-                    
-                
-            }
-            SortVerteces(ref MyVerticesFace);
-            SortVerteces(ref MyVerticesEdge);
-            // MyVerticesEdge = DeleteDuplicateVerteces(MyVerticesEdge);
-            // SortVerteces(ref MyVerticesBotomEdge);
-            // MyVerticesBotomEdge = DeleteDuplicateVerteces(MyVerticesBotomEdge);
 
+            float zOffset = 0.1f;
+
+            for (int i = 0; i < MyVertices.Count; i++)
+            {
+
+                if (MyVertices[i].normal.z > zOffset)
+                {
+                    MyVerticesFace.Add(MyVertices[i]);
+                }
+                else
+                {
+                    DeleteVertexFromTris(i);
+
+                }
+                // else if (MyVertices[i].normal.z > -zOffset)
+                // {
+                //     MyVerticesEdge.Add(MyVertices[i]);
+                // }
+
+
+
+            }
+            
+
+        }
+        int []  trisFromTris()
+        {
+            List<int> trisss = new List<int>();
+            foreach(int[] tr  in triangles)
+            {
+                foreach(int i in tr)
+                {
+                    trisss.Add(i);
+                }
+            }
+            return trisss.ToArray();
         }
         void newgenerateStack(int countChips)
         {
@@ -388,21 +465,11 @@ namespace ChipsController
                     MyVertices.AddRange(myChip.face);
                 }
 
-                // myChip.trianglesEdge = CreateTrianglesInEdge(0, 0, myChip.bottom.Count -1 );
-                // List<int> notCon = new List<int>();
-                // for (int j = 0; j <  myChip.topFace.Count; j++)
-                // {
-                //     notCon.Add(j + myChip.topFace.Count * (i+1));
-                // }
-                // notCon.Add(notCon[0]);//circle surface
-                // myChip.trianglesFace = CreateTrianglesInFace(notCon);
-
                 //test
                 stackChips = new Mesh();
                 List<Vector3> pos = new List<Vector3>();
-                // pos.AddRange(GetPositionFromMyVertices(myChip.bottom));
-                pos.AddRange(GetPositionFromMyVertices(myChip.edge));
-                //pos.AddRange(GetPositionFromMyVertices(myChip.topFace));
+                // pos.AddRange(GetPositionFromMyVertices(myChip.edge));
+                pos.AddRange(GetPositionFromMyVertices(MyVerticesFace));
 
                 stackChips.vertices = pos.ToArray();
                 // stackChips.SetVertices(GetPositionFromMyVertices(totalVertex));
@@ -410,27 +477,27 @@ namespace ChipsController
                 List<int> tris = new List<int>();
                 tris.AddRange(myChip.trianglesEdge);
                 // tris.AddRange(myChip.trianglesFace);
-                stackChips.triangles = tris.ToArray();
+                stackChips.triangles = trisFromTris(); //tris.ToArray();
 
                 List<Vector2> uv = new List<Vector2>();
                 // uv.AddRange(GetUvFromMyVertices(myChip.bottom));
-                uv.AddRange(GetUvFromMyVertices(myChip.edge));
+                uv.AddRange(GetUvFromMyVertices(MyVerticesFace));
                 //  uv.AddRange(GetUvFromMyVertices(myChip.topFace));
                 stackChips.uv = uv.ToArray();
 
                 List<Vector3> norm = new List<Vector3>();
                 // norm.AddRange(GetNormalFromMyVertices(myChip.bottom));
-                norm.AddRange(GetNormalFromMyVertices(myChip.edge));
+                norm.AddRange(GetNormalFromMyVertices(MyVerticesFace));
                 // norm.AddRange(GetNormalFromMyVertices(myChip.topFace));
                 stackChips.normals = norm.ToArray();
 
                 CreateObject(stackChips);
-                DebugMesh(chip);
+                DebugMesh(stackChips);
             }
 
 
         }
-       
+
 
     }
 }
