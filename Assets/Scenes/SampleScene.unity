@@ -96,6 +96,7 @@ LightmapSettings:
     m_PVRFilteringAtrousPositionSigmaAO: 1
     m_ExportTrainingData: 0
     m_TrainingDataDestination: TrainingData
+    m_LightProbeSampleCountMultiplier: 4
   m_LightingDataAsset: {fileID: 0}
   m_UseShadowmask: 1
 --- !u!196 &4
@@ -145,8 +146,9 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 705507993}
   m_Enabled: 1
-  serializedVersion: 9
+  serializedVersion: 10
   m_Type: 1
+  m_Shape: 0
   m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
   m_Intensity: 1
   m_Range: 10
@@ -193,7 +195,7 @@ Light:
   m_BounceIntensity: 1
   m_ColorTemperature: 6570
   m_UseColorTemperature: 0
-  m_BoundingSphereOverride: {x: 7.47e-43, y: -7.3068655e+11, z: 7.47e-43, w: -1.4612504e+12}
+  m_BoundingSphereOverride: {x: 0, y: 1.8189893e-12, z: 0, w: 1.8e-43}
   m_UseBoundingSphereOverride: 0
   m_ShadowRadius: 0
   m_ShadowAngle: 0
@@ -307,3 +309,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb8c5cba67fca444a9e3ec2f1344b9ed, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  countChipsInStack: 3
+  MinRotation: 0
+  MaxRotation: 56.75
+  colors:
+  - {r: 0.5471698, g: 0.30713776, b: 0.30713776, a: 1}
+  - {r: 1, g: 0.8921349, b: 0.11792451, a: 1}
+  - {r: 0.05866425, g: 0.7735849, b: 0, a: 1}
+  - {r: 0.033285867, g: 0.47493306, b: 0.6415094, a: 1}
+  - {r: 0.3735615, g: 0.0744927, b: 0.509434, a: 1}

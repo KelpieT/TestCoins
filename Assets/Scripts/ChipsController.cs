@@ -11,15 +11,18 @@ namespace ChipsController
         public Vector3 position;
         public Vector2 uv;
         public Vector3 normal;
+        public Color color;
         public MyVertex(Vector3 position)
         {
             this.position = position;
             uv = Vector2.zero;
             normal = Vector3.forward;
+            color = Color.white;
         }
     }
     public struct MyChip
     {
+        
         public List<MyVertex> edge;
         public List<MyVertex> face;
 
@@ -32,7 +35,7 @@ namespace ChipsController
                 for (int i = 0; i < listMyVertex.Count; i++)
                 {
                     MyVertex mv = listMyVertex[i];
-                    mv.position = Quaternion.Euler(0, rotation, 0) * listMyVertex[i].position;
+                    mv.position = Quaternion.Euler(0, 0, rotation) * listMyVertex[i].position;
                     listMyVertex[i] = mv;
                 }
             }
@@ -43,15 +46,62 @@ namespace ChipsController
             RotateListMyVertex(ref face);
 
         }
-
+        public void ColorAll()
+        {
+            if (edge != null)
+            {
+                for (int i = 0; i < edge.Count; i++)
+                {
+                    MyVertex mv = edge[i];
+                    mv.color = color;
+                    edge[i] = mv;
+                }
+            }
+            if (face != null)
+            {
+                for (int i = 0; i < face.Count; i++)
+                {
+                    MyVertex mv = face[i];
+                    mv.color = color;
+                    face[i] = mv;
+                }
+            }
+        }
+        public void AddVector3ToPos(Vector3 addV3)
+        {
+            if (edge != null)
+            {
+                for (int i = 0; i < edge.Count; i++)
+                {
+                    MyVertex mv = edge[i];
+                    mv.position = mv.position + addV3;
+                    edge[i] = mv;
+                }
+            }
+            if (face != null)
+            {
+                for (int i = 0; i < face.Count; i++)
+                {
+                    MyVertex mv = face[i];
+                    mv.position = mv.position + addV3;
+                    face[i] = mv;
+                }
+            }
+        }
         public MyChip(List<MyVertex> edge, List<MyVertex> face, float rotation, Color color)
         {
             this.face = face;
             this.edge = edge;
             this.rotation = rotation;
             this.color = color;
-
-            RotateAll();
+            for (int i = 0; i < edge.Count; i++)
+            {
+                MyVertex mv = edge[i];
+                mv.color = color;
+                edge[i] = mv;
+            }
+            // RotateAll();
+            ColorAll();
         }
 
 
@@ -69,7 +119,9 @@ namespace ChipsController
         //Mesh
         //---------------------------------------------
         private Mesh stackChips;
+        [SerializeField]
         private int countChipsInStack;
+        
         private int CountChipsInStack { get => countChipsInStack; set => countChipsInStack = value >= 0 ? value : 0; }
         private string nameMesh = "StackMesh";
         //---------------------------------------------
@@ -81,6 +133,7 @@ namespace ChipsController
         private List<MyVertex> MyVerticesEdge = new List<MyVertex>();
 
         private List<int[]> triangles = new List<int[]>();
+        private int[] totTris = new int[0];
 
         //---------------------------------------------
 
@@ -98,7 +151,7 @@ namespace ChipsController
             LoadAllResources();
             CreateMyVertices();
             CreateAllTris();
-            GenerateStack(1);
+            GenerateStack(CountChipsInStack);
         }
         private void LoadAllResources()
         {
@@ -163,6 +216,15 @@ namespace ChipsController
             }
             return normal;
         }
+        private List<Color> GetColorFromMyVertices(List<MyVertex> listMyVertex)
+        {
+            List<Color> colors = new List<Color>();
+            foreach (MyVertex mv in listMyVertex)
+            {
+                colors.Add(mv.color);
+            }
+            return colors;
+        }
 
         private void CreateMyVertices()
         {
@@ -218,9 +280,11 @@ namespace ChipsController
 
                 if (MyVertices[i].normal.z > zOffset)
                 {
+
                     MyVerticesFace.Add(MyVertices[i]);
                     tempTrisFace.AddRange(SearchTris(i));
                     numbersInTrisFace.Add(i);
+
                 }
                 else if (MyVertices[i].normal.z > -zOffset)
                 {
@@ -229,9 +293,45 @@ namespace ChipsController
                     numbersInTrisEdge.Add(i);
                 }
             }
+            tempTrisFace = RemoveDuplicateTris(tempTrisFace);
+            tempTrisEdge = RemoveDuplicateTris(tempTrisEdge);
+
             trianglesFace = ReplacedTris(tempTrisFace, numbersInTrisFace);
             trianglesEdge = ReplacedTris(tempTrisEdge, numbersInTrisEdge);
 
+        }
+        List<int[]> RemoveDuplicateTris(List<int[]> listTris)
+        {
+            //List<int[]> temp = new List<int[]>();
+
+            int i = 0;
+            int count = listTris.Count;
+            while (i < count)
+            {
+
+                List<int> listFound = new List<int>();
+                for (int j = i + 1; j < listTris.Count; j++)
+                {
+                    if (listTris[i][0] == listTris[j][0] && listTris[i][1] == listTris[j][1] && listTris[i][2] == listTris[j][2])
+                    {
+
+                        listFound.Add(j);
+
+                    }
+                }
+                if (listFound.Count > 0)
+                {
+                    int k = 0;
+
+                    while (k < listFound.Count)
+                    {
+                        listTris.RemoveAt(listFound[k] - k);
+                        k++;
+                    }
+                }
+                i++;
+            }
+            return listTris;
         }
         List<int[]> SearchTris(int vertexNumber)
         {
@@ -256,6 +356,7 @@ namespace ChipsController
         }
         int[] ReplacedTris(List<int[]> tempTris, List<int> numbers)
         {
+
             int[] totalTris = new int[tempTris.Count * 3];
             for (int i = 0; i < tempTris.Count; i++)
             {
@@ -279,45 +380,72 @@ namespace ChipsController
 
         void GenerateStack(int countChips)
         {
-            List<int> trianglesEdge = new List<int>();
-            List<int> trianglesFace = new List<int>();
+            List<Vector3> pos = new List<Vector3>();
+            List<Vector2> uv = new List<Vector2>();
+            List<Vector3> norm = new List<Vector3>();
+            List<Color> colors = new List<Color>();
+            int countVertexInMesh = 0;
             for (int i = 0; i < countChips; i++)
             {
-                MyChip myChip = new MyChip(MyVerticesEdge, null, Random.Range(MinRotation, MaxRotation), colors[Random.Range(0, colors.Length)]);
 
-                MyVertices.AddRange(myChip.edge);
+                MyChip myChip = new MyChip(MyVerticesEdge, MyVerticesFace, Random.Range(MinRotation, MaxRotation), this.colors[Random.Range(0, this.colors.Length)]);
+                AddToTotalTriangles(trianglesEdge, countVertexInMesh);
+                countVertexInMesh += myChip.edge.Count;
+                myChip.AddVector3ToPos(Vector3.forward * i);
+                pos.AddRange(GetPositionFromMyVertices(myChip.edge));
+                uv.AddRange(GetUvFromMyVertices(myChip.edge));
+                norm.AddRange(GetNormalFromMyVertices(myChip.edge));
+                colors.AddRange(GetColorFromMyVertices(myChip.edge));
+
+
                 if (i == countChips - 1)
                 {
-                    myChip.face = MyVerticesFace;
-                    myChip.RotateAll();
-                    MyVertices.AddRange(myChip.face);
+                    //MyChip myChip = new MyChip(MyVerticesEdge, MyVerticesFace, Random.Range(MinRotation, MaxRotation), this.colors[Random.Range(0, this.colors.Length)]);
+                    AddToTotalTriangles(trianglesFace, countVertexInMesh);
+                    countVertexInMesh += myChip.face.Count;
+                    myChip.AddVector3ToPos(Vector3.forward * (i));
+                    pos.AddRange(GetPositionFromMyVertices(myChip.face));
+                    uv.AddRange(GetUvFromMyVertices(myChip.face));
+                    norm.AddRange(GetNormalFromMyVertices(myChip.face));
+                    colors.AddRange(GetColorFromMyVertices(myChip.face));
+
+                    // myChip.RotateAll();
+                    // myChip.ColorAll();
+                }
+                myChip.RotateAll();
+                myChip.ColorAll();
+                if (i == countChips - 1)
+                {
+
                 }
 
-                //test
-                stackChips = new Mesh();
-                List<Vector3> pos = new List<Vector3>();
-                pos.AddRange(GetPositionFromMyVertices(MyVerticesFace));
 
-                stackChips.vertices = pos.ToArray();
-
-                List<int> tris = new List<int>();
-                stackChips.triangles = this.trianglesFace;
-
-                List<Vector2> uv = new List<Vector2>();
-                uv.AddRange(GetUvFromMyVertices(MyVerticesFace));
-                stackChips.uv = uv.ToArray();
-
-                List<Vector3> norm = new List<Vector3>();
-                norm.AddRange(GetNormalFromMyVertices(MyVerticesFace));
-                stackChips.normals = norm.ToArray();
-
-                CreateObject(stackChips);
-                DebugMesh(stackChips);
             }
+            stackChips = new Mesh();
+            stackChips.vertices = pos.ToArray();
 
+            stackChips.uv = uv.ToArray();
+            stackChips.normals = norm.ToArray();
+            stackChips.colors = colors.ToArray();
+            stackChips.triangles = totTris;
+            CreateObject(stackChips);
+            DebugMesh(stackChips);
 
         }
+        void AddToTotalTriangles(int[] addTris, int countVert)
+        {
+            int lastNumber = countVert;
 
+            List<int> temp = new List<int>();
+            temp.AddRange(totTris);
+            for (int i = 0; i < addTris.Length; i++)
+            {
+                int tr = addTris[i] + lastNumber;
+                addTris[i] = tr;
+            }
+            temp.AddRange(addTris);
+            totTris = temp.ToArray();
+        }
 
     }
 }
